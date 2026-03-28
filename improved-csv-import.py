@@ -1,3 +1,4 @@
+import os
 import mysql.connector
 import csv
 
@@ -5,7 +6,7 @@ def import_csv_data():
     db = mysql.connector.connect(
         host="localhost",
         user="root",
-        password="tonne96",
+        password=os.environ.get("DB_PASSWORD", ""),
         database="warhammer40k",
         port="3308"
     )

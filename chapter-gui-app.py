@@ -1,3 +1,4 @@
+import os
 import tkinter as tk
 from tkinter import ttk, scrolledtext
 import mysql.connector
@@ -116,7 +117,7 @@ class Warhammer40kApp:
         return mysql.connector.connect(
             host="localhost",
             user="root",
-            password="tonne96",
+            password=os.environ.get("DB_PASSWORD", ""),
             database="warhammer40k",
             port="3308"
         )

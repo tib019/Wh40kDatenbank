@@ -1,3 +1,4 @@
+import os
 import mysql.connector
 
 def create_database():
@@ -5,7 +6,7 @@ def create_database():
     db = mysql.connector.connect(
         host="localhost",
         user="root",
-        password="tonne96",
+        password=os.environ.get("DB_PASSWORD", ""),
         port="3308"
     )
     cursor = db.cursor()

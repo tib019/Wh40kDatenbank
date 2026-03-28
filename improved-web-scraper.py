@@ -1,3 +1,4 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 import mysql.connector
@@ -23,7 +24,7 @@ def scrape_chapters():
     db = mysql.connector.connect(
         host="localhost",
         user="root",
-        password="tonne96",
+        password=os.environ.get("DB_PASSWORD", ""),
         database="warhammer40k",
         port="3308"
     )
