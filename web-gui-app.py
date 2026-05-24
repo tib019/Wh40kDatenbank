@@ -48,25 +48,46 @@ def get_chapter_by_name(chapter_name):
     db.close()
     return jsonify(result) if result else ('Not found', 404)
 
+_ALLOWED_IMAGE_HOSTS = {
+    'warhammer40k.com', 'www.warhammer40k.com',
+    'wahapedia.ru', 'www.wahapedia.ru',
+    'upload.wikimedia.org',
+}
+
 @app.route('/api/image-proxy')
 def image_proxy():
-    """Proxy für externe Bilder, falls nötig"""
+    """Proxy für externe Bilder"""
+    import requests
+    from urllib.parse import urlparse
+
     url = request.args.get('url')
     if not url:
         return "URL Parameter fehlt", 400
-    
-    import requests
+
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https') or parsed.netloc not in _ALLOWED_IMAGE_HOSTS:
+        return "URL nicht erlaubt", 403
+
     try:
-        response = requests.get(url)
-        return response.content, 200, {'Content-Type': response.headers.get('Content-Type')}
-    except Exception as e:
-        return str(e), 500
+        resp = requests.get(url, timeout=5, allow_redirects=False)
+        content_type = resp.headers.get('Content-Type', '')
+        if not content_type.startswith('image/'):
+            return "Nur Bilddateien erlaubt", 403
+        return resp.content, 200, {'Content-Type': content_type}
+    except Exception:
+        return "Fehler beim Abrufen des Bildes", 500
+
+_ALLOWED_ORIGINS = set(
+    os.environ.get('ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:5173').split(',')
+)
 
 @app.after_request
 def add_cors_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
-    response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+    origin = request.headers.get('Origin', '')
+    if origin in _ALLOWED_ORIGINS:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+        response.headers['Access-Control-Allow-Methods'] = 'GET,OPTIONS'
     return response
 
 if __name__ == '__main__':
@@ -110,4 +131,4 @@ a {
     color: #0066cc;
 }''')
     
-app.run(debug=True)
+app.run(debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true')
